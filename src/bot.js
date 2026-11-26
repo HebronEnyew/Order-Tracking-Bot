@@ -18,12 +18,14 @@ export const bot = new Bot(token);
 // Customer language and menu configuration
 const MENU = {
   en: {
+    start: "🚀 Start",
     placeOrder: "🛍️ Place an Order",
     myOrders: "📦 My Orders",
     help: "ℹ️ Help",
     changeLanguage: "🌐 Change Language",
   },
   am: {
+    start: "🚀 ጀምር",
     placeOrder: "🛍️ ትዕዛዝ ይስጡ",
     myOrders: "📦 ትዕዛዞቼ",
     help: "ℹ️ እገዛ",
@@ -210,6 +212,8 @@ function getMainMenu(language) {
   const labels = MENU[language] ?? MENU.en;
 
   return new Keyboard()
+    .text(labels.start)
+    .row()
     .text(labels.placeOrder)
     .row()
     .text(labels.myOrders)
@@ -1180,6 +1184,21 @@ bot.callbackQuery(/^submit_batch:/, async (ctx) => {
     );
   }
 });
+
+bot.hears(
+  [MENU.en.start, MENU.am.start],
+  async (ctx) => {
+    const customer = await getOrCreateCustomer(ctx.from);
+    const language = customer.language || "en";
+
+    await ctx.reply(
+      language === "am"
+        ? "እንኳን ወደ Valerie Collection በደህና መጡ! 💗\nከታች ካለው ይምረጡ።"
+        : "Welcome to Valerie Collection! 💗\nChoose an option from the menu below.",
+      { reply_markup: getMainMenu(language) }
+    );
+  }
+);
 
 // Handle customer quote decisions
 bot.on("callback_query:data", async (ctx) => {
