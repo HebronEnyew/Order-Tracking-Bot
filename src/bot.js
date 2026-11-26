@@ -1,6 +1,5 @@
-
 import "dotenv/config";
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot, InlineKeyboard, Keyboard } from "grammy";
 import { prisma } from "./prisma.js";
 
 const token = process.env.BOT_TOKEN;
@@ -15,6 +14,231 @@ if (!Number.isSafeInteger(adminGroupId)) {
 }
 
 export const bot = new Bot(token);
+
+// Customer language and menu configuration
+const MENU = {
+  en: {
+    placeOrder: "🛍️ Place an Order",
+    myOrders: "📦 My Orders",
+    help: "ℹ️ Help",
+    changeLanguage: "🌐 Change Language",
+  },
+  am: {
+    placeOrder: "🛍️ ትዕዛዝ ይስጡ",
+    myOrders: "📦 ትዕዛዞቼ",
+    help: "ℹ️ እገዛ",
+    changeLanguage: "🌐 ቋንቋ ቀይር",
+  },
+};
+
+const messages = {
+  en: {
+    welcome:
+      (name) =>
+        `Welcome, ${name}! 🛍️\n\nWelcome to Valerie Collection!\n\nUse the menu below to place an order, check your orders, or get help.`,
+    chooseLanguage:
+      "Welcome to Valerie Collection! 🛍️\n\nPlease choose your preferred language:",
+    languageSaved:
+      "Your language preference has been saved! ❤️",
+    menu:
+      "What would you like to do today? 🛍️",
+    placeOrder:
+      "Great! ❤️ Let's get your order started.\n\nSend us your SHEIN product links or screenshots. You can send multiple products in one order.\n\nWhen you've sent everything, tap **Done, submit**.",
+    help:
+      "Welcome to Valerie Collection! ❤️\n\n" +
+      "Here's how to place an order:\n\n" +
+      "1. Tap 🛍️ Place an Order.\n" +
+      "2. Send your SHEIN product links or screenshots.\n" +
+      "3. You can send multiple products together.\n" +
+      "4. Tap Done, submit when finished.\n" +
+      "5. Our team will review your products and send you a separate price for each one.\n" +
+      "6. Accept or decline each price using the buttons we send you.\n\n" +
+      "You can use 📦 My Orders to check your order status.",
+    noOrders:
+      "You don't have any orders yet. 🛍️\n\nTap Place an Order to get started!",
+    myOrdersTitle:
+      "📦 Your Recent Orders\n\n",
+    order:
+      (name, status, date) =>
+        `🛍️ ${name}\nStatus: ${status}\nDate: ${date}`,
+    unknownProduct:
+      "Product details not available",
+    status: {
+      NEW_REQUEST: "New request",
+      AWAITING_DETAILS: "Awaiting details",
+      AWAITING_PRICE: "Awaiting price",
+      PRICE_SENT: "Price sent",
+      CUSTOMER_ACCEPTED: "Price accepted",
+      CUSTOMER_DECLINED: "Price declined",
+      ORDERED_FROM_SUPPLIER: "Ordered from supplier",
+      ARRIVED: "Arrived",
+      DELIVERED: "Delivered",
+      CANCELLED: "Cancelled",
+    },
+    quote:
+      (product, price) =>
+        `Your product has been priced! 🛍️\n\nProduct: ${product}\nYour total price: ${price.toLocaleString()}\n\nWould you like to proceed with this product?`,
+    accept: "✅ Accept price",
+    decline: "❌ Decline quote",
+    accepted:
+      "Thank you! 🎉 We've recorded your acceptance. Our team will proceed with your order.",
+    declined:
+      "No problem! Your quote has been declined. Thank you for considering Valerie Collection. ❤️",
+    optionRequest:
+      (options) =>
+        `Before we prepare the price for this product, please provide:\n\n${options
+          .map((option) => `${option.charAt(0).toUpperCase() + option.slice(1)}:`)
+          .join("\n")}\n\nPlease reply to this message and use the labels above. For example:\n${options
+          .map((option) => `${option.charAt(0).toUpperCase() + option.slice(1)}: your answer`)
+          .join("\n")}`,
+    missingOptions:
+      (options) =>
+        `I still need these details for that product: ${options.join(", ")}.\n\nPlease reply again using the requested labels.`,
+    invalidQuantity:
+      "Quantity must be a whole number greater than zero. Please reply again.",
+    optionsSaved:
+      "Thank you! ❤️ I've saved those options for your product. Our team can now prepare your price.",
+    receivedDuplicate:
+      "We've already received this product. 🛍️",
+    receivedError:
+      "Something went wrong while receiving your product. Please try again later.",
+    batchPrompt:
+      (count) =>
+        `I've received ${count} product${count === 1 ? "" : "s"}! 🛍️\n\nYou can send more product links or screenshots, or tap **Done, submit** when you've sent everything.\n\nWe'll submit the products together, and you can receive a separate price for each one.`,
+    doneSubmit:
+      "✅ Done, submit",
+    batchSubmitted:
+      (count) =>
+        `Your ${count} product${count === 1 ? "" : "s"} have been submitted successfully! 🎉\n\nWe'll review them and send you a price for each product separately.`,
+    batchError:
+      "I couldn't finish submitting your products. Please press 'Done, submit' again in a moment.",
+    quoteDecision:
+      "Something went wrong. Please try again.",
+    chooseLanguageAgain:
+      "Please choose your preferred language:",
+  },
+
+  am: {
+    welcome:
+      (name) =>
+        `እንኳን ወደ Valerie Collection በደህና መጡ, ${name}! 🛍️\n\nትዕዛዝ ለመስጠት፣ ትዕዛዞችዎን ለማየት ወይም እገዛ ለማግኘት ከታች ያለውን ሜኑ ይጠቀሙ።`,
+    chooseLanguage:
+      "እንኳን ወደ Valerie Collection በደህና መጡ! 🛍️\n\nእባክዎ የሚመርጡትን ቋንቋ ይምረጡ፦",
+    languageSaved:
+      "የቋንቋ ምርጫዎ ተቀምጧል! ❤️",
+    menu:
+      "ዛሬ ምን ማድረግ ይፈልጋሉ? 🛍️",
+    placeOrder:
+      "ጥሩ! ❤️ ትዕዛዝዎን እንጀምር።\n\nእባክዎ የSHEIN ምርቶችን ሊንክ ወይም ስክሪንሾት ይላኩልን። በአንድ ትዕዛዝ ውስጥ ብዙ ምርቶችን መላክ ይችላሉ።\n\nሁሉንም ከላኩ በኋላ **Done, submit** የሚለውን ይጫኑ።",
+    help:
+      "እንኳን ወደ Valerie Collection በደህና መጡ! ❤️\n\nትዕዛዝ ለመስጠት፦\n\n" +
+      "1. 🛍️ ትዕዛዝ ይስጡ የሚለውን ይጫኑ።\n" +
+      "2. የSHEIN ምርት ሊንክ ወይም ስክሪንሾት ይላኩ።\n" +
+      "3. ብዙ ምርቶችን አንድ ላይ መላክ ይችላሉ።\n" +
+      "4. ሲጨርሱ Done, submit የሚለውን ይጫኑ።\n" +
+      "5. ቡድናችን ምርቶቹን አይቶ የእያንዳንዱን ዋጋ ይልክልዎታል።\n" +
+      "6. በሚላክልዎት አዝራሮች ዋጋውን መቀበል ወይም አለመቀበል ይችላሉ።\n\n" +
+      "የትዕዛዝዎን ሁኔታ ለማየት 📦 ትዕዛዞቼ የሚለውን ይጠቀሙ።",
+    noOrders:
+      "እስካሁን ምንም ትዕዛዝ የለዎትም። 🛍️\n\nለመጀመር ትዕዛዝ ይስጡ የሚለውን ይጫኑ!",
+    myOrdersTitle:
+      "📦 የቅርብ ጊዜ ትዕዛዞችዎ\n\n",
+    order:
+      (name, status, date) =>
+        `🛍️ ${name}\nሁኔታ: ${status}\nቀን: ${date}`,
+    unknownProduct:
+      "የምርት ዝርዝር አልተገኘም",
+    status: {
+      NEW_REQUEST: "አዲስ ጥያቄ",
+      AWAITING_DETAILS: "ዝርዝር መረጃ በመጠባበቅ ላይ",
+      AWAITING_PRICE: "ዋጋ በመጠባበቅ ላይ",
+      PRICE_SENT: "ዋጋ ተልኳል",
+      CUSTOMER_ACCEPTED: "ዋጋው ተቀብለዋል",
+      CUSTOMER_DECLINED: "ዋጋውን አልተቀበሉም",
+      ORDERED_FROM_SUPPLIER: "ከአቅራቢው ታዝዟል",
+      ARRIVED: "ደርሷል",
+      DELIVERED: "ተረክበዋል",
+      CANCELLED: "ተሰርዟል",
+    },
+    quote:
+      (product, price) =>
+        `የምርትዎ ዋጋ ተዘጋጅቷል! 🛍️\n\nምርት: ${product}\nጠቅላላ ዋጋ: ${price.toLocaleString()}\n\nበዚህ ዋጋ መቀጠል ይፈልጋሉ?`,
+    accept: "✅ ዋጋውን እቀበላለሁ",
+    decline: "❌ ዋጋውን አልቀበልም",
+    accepted:
+      "እናመሰግናለን! 🎉 ውሳኔዎ ተመዝግቧል። ቡድናችን ትዕዛዝዎን ይቀጥላል።",
+    declined:
+      "ምንም ችግር የለም! የዋጋ ጥያቄውን አልተቀበሉም። Valerie Collectionን ስለመረጡ እናመሰግናለን። ❤️",
+    optionRequest:
+      (options) =>
+        `ዋጋውን ከማዘጋጀታችን በፊት እባክዎ የሚከተሉትን መረጃዎች ይላኩ፦\n\n${options
+          .map((option) => `${option.charAt(0).toUpperCase() + option.slice(1)}:`)
+          .join("\n")}\n\nእባክዎ ይህንን መልዕክት በመመለስ ከላይ ያሉትን መለያዎች ይጠቀሙ።`,
+    missingOptions:
+      (options) =>
+        `እባክዎ ለዚህ ምርት የሚከተሉትን መረጃዎች ይሙሉ፦ ${options.join(", ")}.\n\nበተጠየቁት መለያዎች እንደገና ይመልሱ።`,
+    invalidQuantity:
+      "የብዛት ቁጥሩ ከዜሮ በላይ የሆነ ሙሉ ቁጥር መሆን አለበት። እባክዎ እንደገና ይላኩ።",
+    optionsSaved:
+      "እናመሰግናለን! ❤️ የምርትዎ መረጃዎች ተቀምጠዋል። ቡድናችን አሁን ዋጋውን ማዘጋጀት ይችላል።",
+    receivedDuplicate:
+      "ይህንን ምርት ከዚህ በፊት ተቀብለነዋል። 🛍️",
+    receivedError:
+      "ምርትዎን በመቀበል ላይ ችግር ተፈጥሯል። እባክዎ ቆይተው እንደገና ይሞክሩ።",
+    batchPrompt:
+      (count) =>
+        `${count} ምርት${count === 1 ? "" : "ዎች"} ደርሰውናል! 🛍️\n\nተጨማሪ ሊንኮች ወይም ስክሪንሾቶች መላክ ይችላሉ። ሁሉንም ከጨረሱ Done, submit የሚለውን ይጫኑ።\n\nምርቶቹን አንድ ላይ እንልካለን፣ ለእያንዳንዱም የተለየ ዋጋ ይደርስዎታል።`,
+    doneSubmit:
+      "✅ ጨርሻለሁ፣ ላክ",
+    batchSubmitted:
+      (count) =>
+        `${count} ምርት${count === 1 ? "" : "ዎች"}ዎ በተሳካ ሁኔታ ተልከዋል! 🎉\n\nቡድናችን ይመረምራቸዋል፣ ለእያንዳንዱም የተለየ ዋጋ ይልክልዎታል።`,
+    batchError:
+      "ምርቶችዎን ማስገባት አልተቻለም። እባክዎ Done, submit የሚለውን እንደገና ይጫኑ።",
+    quoteDecision:
+      "ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+    chooseLanguageAgain:
+      "እባክዎ የሚመርጡትን ቋንቋ ይምረጡ፦",
+  },
+};
+
+function getMessages(language) {
+  return messages[language] ?? messages.en;
+}
+
+function getMainMenu(language) {
+  const labels = MENU[language] ?? MENU.en;
+
+  return new Keyboard()
+    .text(labels.placeOrder)
+    .row()
+    .text(labels.myOrders)
+    .row()
+    .text(labels.help)
+    .row()
+    .text(labels.changeLanguage)
+    .resized()
+    .persistent();
+}
+
+function getLanguageKeyboard() {
+  return new InlineKeyboard()
+    .text("🇬🇧 English", "language:en")
+    .text("🇪🇹 አማርኛ", "language:am");
+}
+
+async function showMainMenu(ctx, customer, language, showWelcome = false) {
+  const text = getMessages(language);
+
+  await ctx.reply(
+    showWelcome
+      ? text.welcome(customer.displayName)
+      : text.menu,
+    {
+      reply_markup: getMainMenu(language),
+    }
+  );
+}
 
 // Customer registration and permanent topic creation
 async function getOrCreateCustomer(from) {
@@ -156,10 +380,21 @@ bot.command("start", async (ctx) => {
   try {
     const customer = await getOrCreateCustomer(ctx.from);
 
-    await ctx.reply(
-      `Welcome, ${customer.displayName}! 🛍️\n\n` +
-      "Welcome to Valerie Collection!\n\n" +
-      "Send us your SHEIN product links or screenshots. You can send multiple items, then tap Done, submit when you are finished."
+    if (!customer.language) {
+      await ctx.reply(
+        messages.en.chooseLanguage,
+        {
+          reply_markup: getLanguageKeyboard(),
+        }
+      );
+      return;
+    }
+
+    await showMainMenu(
+      ctx,
+      customer,
+      customer.language,
+      true
     );
   } catch (error) {
     console.error("Customer registration failed:", error);
@@ -170,13 +405,255 @@ bot.command("start", async (ctx) => {
   }
 });
 
+// Save the customer's language selection
+bot.callbackQuery(/^language:(en|am)$/, async (ctx) => {
+  try {
+    if (ctx.chat?.type !== "private") {
+      await ctx.answerCallbackQuery();
+      return;
+    }
+
+    const language = ctx.callbackQuery.data.split(":")[1];
+
+    const customer = await getOrCreateCustomer(ctx.from);
+
+    const updatedCustomer = await prisma.customer.update({
+      where: {
+        id: customer.id,
+      },
+      data: {
+        language,
+      },
+    });
+
+    await ctx.answerCallbackQuery({
+      text: language === "en"
+        ? "Language set to English"
+        : "ቋንቋው ወደ አማርኛ ተቀይሯል",
+    });
+
+    try {
+      await ctx.editMessageReplyMarkup({
+        reply_markup: undefined,
+      });
+    } catch (error) {
+      console.error("Could not remove language buttons:", error);
+    }
+
+    await showMainMenu(
+      ctx,
+      updatedCustomer,
+      language,
+      true
+    );
+  } catch (error) {
+    console.error("Language selection failed:", error);
+
+    await ctx.answerCallbackQuery({
+      text: "Something went wrong. Please try again.",
+      show_alert: true,
+    });
+  }
+});
+
+// Main menu: Place an Order
+bot.hears(
+  [
+    MENU.en.placeOrder,
+    MENU.am.placeOrder,
+  ],
+  async (ctx) => {
+    if (ctx.chat.type !== "private") return;
+
+    try {
+      const customer = await getOrCreateCustomer(ctx.from);
+
+      if (!customer.language) {
+        await ctx.reply(
+          messages.en.chooseLanguage,
+          { reply_markup: getLanguageKeyboard() }
+        );
+        return;
+      }
+
+      await ctx.reply(
+        getMessages(customer.language).placeOrder,
+        {
+          parse_mode: "Markdown",
+          reply_markup: getMainMenu(customer.language),
+        }
+      );
+    } catch (error) {
+      console.error("Place order menu failed:", error);
+      await ctx.reply("Something went wrong. Please try again.");
+    }
+  }
+);
+
+// Main menu: My Orders
+bot.hears(
+  [
+    MENU.en.myOrders,
+    MENU.am.myOrders,
+  ],
+  async (ctx) => {
+    if (ctx.chat.type !== "private") return;
+
+    try {
+      const customer = await getOrCreateCustomer(ctx.from);
+
+      if (!customer.language) {
+        await ctx.reply(
+          messages.en.chooseLanguage,
+          { reply_markup: getLanguageKeyboard() }
+        );
+        return;
+      }
+
+      const text = getMessages(customer.language);
+
+      const orders = await prisma.order.findMany({
+        where: {
+          customerId: customer.id,
+        },
+        include: {
+          items: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+      });
+
+      if (orders.length === 0) {
+        await ctx.reply(
+          text.noOrders,
+          { reply_markup: getMainMenu(customer.language) }
+        );
+        return;
+      }
+
+      const orderMessages = orders.map((order) => {
+        const item = order.items[0];
+
+        const productName =
+          item?.productName ||
+          item?.itemDescription ||
+          text.unknownProduct;
+
+        const status =
+          text.status[order.status] || order.status;
+
+        const date = new Intl.DateTimeFormat(
+          customer.language === "am" ? "am-ET" : "en",
+          {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }
+        ).format(order.createdAt);
+
+        return text.order(productName, status, date);
+      });
+
+      await ctx.reply(
+        text.myOrdersTitle + orderMessages.join("\n\n"),
+        {
+          reply_markup: getMainMenu(customer.language),
+        }
+      );
+    } catch (error) {
+      console.error("My orders lookup failed:", error);
+      await ctx.reply("Something went wrong while retrieving your orders.");
+    }
+  }
+);
+
+// Main menu: Help
+bot.hears(
+  [
+    MENU.en.help,
+    MENU.am.help,
+  ],
+  async (ctx) => {
+    if (ctx.chat.type !== "private") return;
+
+    try {
+      const customer = await getOrCreateCustomer(ctx.from);
+
+      if (!customer.language) {
+        await ctx.reply(
+          messages.en.chooseLanguage,
+          { reply_markup: getLanguageKeyboard() }
+        );
+        return;
+      }
+
+      await ctx.reply(
+        getMessages(customer.language).help,
+        {
+          reply_markup: getMainMenu(customer.language),
+        }
+      );
+    } catch (error) {
+      console.error("Help menu failed:", error);
+      await ctx.reply("Something went wrong. Please try again.");
+    }
+  }
+);
+
+// Main menu: Change Language
+bot.hears(
+  [
+    MENU.en.changeLanguage,
+    MENU.am.changeLanguage,
+  ],
+  async (ctx) => {
+    if (ctx.chat.type !== "private") return;
+
+    try {
+      const customer = await getOrCreateCustomer(ctx.from);
+
+      const language = customer.language || "en";
+
+      await ctx.reply(
+        getMessages(language).chooseLanguageAgain,
+        {
+          reply_markup: getLanguageKeyboard(),
+        }
+      );
+    } catch (error) {
+      console.error("Change language menu failed:", error);
+      await ctx.reply("Something went wrong. Please try again.");
+    }
+  }
+);
+
+// Help command
 bot.command("help", async (ctx) => {
-  await ctx.reply(
-    "Available commands:\n" +
-    "/start - Register and get started\n" +
-    "/help - Show available commands\n\n" +
-    "Send multiple product links or screenshots, then tap Done, submit when you are finished."
-  );
+  if (ctx.chat.type !== "private") return;
+
+  try {
+    const customer = await getOrCreateCustomer(ctx.from);
+
+    if (!customer.language) {
+      await ctx.reply(
+        messages.en.chooseLanguage,
+        { reply_markup: getLanguageKeyboard() }
+      );
+      return;
+    }
+
+    await ctx.reply(
+      getMessages(customer.language).help,
+      {
+        reply_markup: getMainMenu(customer.language),
+      }
+    );
+  } catch (error) {
+    console.error("Help command failed:", error);
+    await ctx.reply("Something went wrong. Please try again.");
+  }
 });
 
 // Admin requests missing product options from a customer.
@@ -266,11 +743,7 @@ bot.command("request", async (ctx) => {
 
     const requestMessage = await bot.api.sendMessage(
       customerChatId,
-      `Before we prepare the price for this product, please provide:\n\n${requestedOptions
-        .map((option) => `${option.charAt(0).toUpperCase() + option.slice(1)}:`)
-        .join("\n")}\n\nPlease reply to this message and use the labels above. For example:\n${requestedOptions
-        .map((option) => `${option.charAt(0).toUpperCase() + option.slice(1)}: your answer`)
-        .join("\n")}`,
+      getMessages(order.customer.language).optionRequest(requestedOptions),
       {
         reply_parameters: {
           message_id: order.sourceMessageId,
@@ -405,22 +878,22 @@ bot.command("quote", async (ctx) => {
       throw new Error("Customer Telegram ID is invalid.");
     }
 
+    const language = order.customer.language || "en";
+    const text = getMessages(language);
+
     const productLabel =
       item.productName ||
       item.itemDescription ||
       "the product you submitted";
 
     const keyboard = new InlineKeyboard()
-      .text("✅ Accept price", `accept:${order.id}`)
-      .text("❌ Decline quote", `decline:${order.id}`);
+      .text(text.accept, `accept:${order.id}`)
+      .text(text.decline, `decline:${order.id}`);
 
     try {
       await bot.api.sendMessage(
         customerChatId,
-        `Your product has been priced! 🛍️\n\n` +
-          `Product: ${productLabel}\n` +
-          `Your total price: ${customerPrice.toLocaleString()}\n\n` +
-          "Would you like to proceed with this product?",
+        text.quote(productLabel, customerPrice),
         {
           ...(order.sourceMessageId
             ? { reply_parameters: { message_id: order.sourceMessageId } }
@@ -594,108 +1067,118 @@ bot.callbackQuery(/^submit_batch:/, async (ctx) => {
       });
     }
 
-// Copy each original customer message into the customer's topic.
-// Each copied message is linked to its own Order for /quote.
-for (const order of batch.orders) {
-  if (order.adminMessageId) continue;
+    // Copy each original customer message into the customer's topic.
+    // Each copied message is linked to its own Order for /quote.
+    for (const order of batch.orders) {
+      if (order.adminMessageId) continue;
 
-  if (order.sourceMessageId === null) {
-    throw new Error(`Order ${order.id} has no source Telegram message ID.`);
-  }
+      if (order.sourceMessageId === null) {
+        throw new Error(`Order ${order.id} has no source Telegram message ID.`);
+      }
 
-  const copiedMessage = await bot.api.copyMessage(
-    adminGroupId,
-    customerChatId,
-    order.sourceMessageId,
-    {
-      message_thread_id: batch.customer.forumTopicId,
+      const copiedMessage = await bot.api.copyMessage(
+        adminGroupId,
+        customerChatId,
+        order.sourceMessageId,
+        {
+          message_thread_id: batch.customer.forumTopicId,
+        }
+      );
+
+      await prisma.order.update({
+        where: {
+          id: order.id,
+        },
+        data: {
+          adminMessageId: copiedMessage.message_id,
+        },
+      });
     }
-  );
 
-  await prisma.order.update({
-    where: {
-      id: order.id,
-    },
-    data: {
-      adminMessageId: copiedMessage.message_id,
-    },
-  });
-}
+    // Only make the orders quotable after every original message has
+    // been copied successfully to the admin topic.
+    await prisma.$transaction([
+      prisma.order.updateMany({
+        where: {
+          batchId: batch.id,
+          status: "AWAITING_DETAILS",
+        },
+        data: {
+          status: "AWAITING_PRICE",
+          intakeStep: null,
+        },
+      }),
+      prisma.orderBatch.update({
+        where: {
+          id: batch.id,
+        },
+        data: {
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+        },
+      }),
+    ]);
 
-// Only make the orders quotable after every original message has
-// been copied successfully to the admin topic.
-await prisma.$transaction([
-  prisma.order.updateMany({
-    where: {
-      batchId: batch.id,
-      status: "AWAITING_DETAILS",
-    },
-    data: {
-      status: "AWAITING_PRICE",
-      intakeStep: null,
-    },
-  }),
-  prisma.orderBatch.update({
-    where: {
-      id: batch.id,
-    },
-    data: {
-      status: "SUBMITTED",
-      submittedAt: new Date(),
-    },
-  }),
-]);
+    const promptMessageId =
+      batch.promptMessageId ?? ctx.callbackQuery.message?.message_id;
 
-const promptMessageId =
-  batch.promptMessageId ?? ctx.callbackQuery.message?.message_id;
-
-if (promptMessageId) {
-  try {
-    await bot.api.editMessageText(
-      customerChatId,
-      promptMessageId,
-      `Your ${batch.orders.length} product${batch.orders.length === 1 ? "" : "s"} have been submitted successfully! 🎉\n\n` +
-        "We'll review them and send you a price for each product separately."
+    const language = batch.customer.language || "en";
+    const confirmation = getMessages(language).batchSubmitted(
+      batch.orders.length
     );
-  } catch (editError) {
-    console.error("Could not update the batch prompt:", editError);
+
+    if (promptMessageId) {
+      try {
+        await bot.api.editMessageText(
+          customerChatId,
+          promptMessageId,
+          confirmation
+        );
+      } catch (editError) {
+        console.error("Could not update the batch prompt:", editError);
+      }
+    } else {
+      await bot.api.sendMessage(
+        customerChatId,
+        confirmation
+      );
+    }
+
+    console.log(
+      `Batch #${batch.batchNumber} submitted with ${batch.orders.length} products.`
+    );
+  } catch (error) {
+    console.error("Batch submission failed:", error);
+
+    // Mark the attempt as failed so the same batch can be retried.
+    // Any successfully copied messages are preserved and won't duplicate.
+    try {
+      const batchIdFromCallback = ctx.callbackQuery.data.split(":")[1];
+
+      await prisma.orderBatch.updateMany({
+        where: {
+          id: batchIdFromCallback,
+          status: "SUBMITTING",
+        },
+        data: {
+          status: "FAILED",
+        },
+      });
+    } catch (statusError) {
+      console.error("Could not mark batch submission as failed:", statusError);
+    }
+
+    const batch = await prisma.orderBatch.findUnique({
+      where: { id: batchId },
+      include: { customer: true },
+    }).catch(() => null);
+
+    const language = batch?.customer?.language || "en";
+
+    await ctx.reply(
+      getMessages(language).batchError
+    );
   }
-} else {
-  await bot.api.sendMessage(
-    customerChatId,
-    `Your ${batch.orders.length} products have been submitted successfully! 🎉\n\n` +
-      "We'll review them and send you a price for each product separately."
-  );
-}
-
-console.log(
-  `Batch #${batch.batchNumber} submitted with ${batch.orders.length} products.`
-);
-} catch (error) {
-  console.error("Batch submission failed:", error);
-
-  // Mark the attempt as failed so the same batch can be retried.
-  // Any successfully copied messages are preserved and won't duplicate.
-  try {
-    const batchIdFromCallback = ctx.callbackQuery.data.split(":")[1];
-
-    await prisma.orderBatch.updateMany({
-      where: {
-        id: batchIdFromCallback,
-        status: "SUBMITTING",
-      },
-      data: {
-        status: "FAILED",
-      },
-    });
-  } catch (statusError) {
-    console.error("Could not mark batch submission as failed:", statusError);
-  }
-
-  await ctx.reply(
-    "I couldn't finish submitting your products. Please press 'Done, submit' again in a moment."
-  );
-}
 });
 
 // Handle customer quote decisions
@@ -777,12 +1260,15 @@ bot.on("callback_query:data", async (ctx) => {
       return;
     }
 
+    const language = order.customer.language || "en";
+    const text = getMessages(language);
+
     // Acknowledge the button click
     await ctx.answerCallbackQuery({
       text:
         action === "accept"
-          ? "You accepted the price!"
-          : "You declined the quote.",
+          ? (language === "am" ? "ዋጋውን ተቀብለዋል!" : "You accepted the price!")
+          : (language === "am" ? "ዋጋውን አልተቀበሉም።" : "You declined the quote."),
     });
 
     // Remove the buttons from the original quote message
@@ -832,8 +1318,11 @@ bot.on("callback_query:data", async (ctx) => {
     // Confirm the decision to the customer
     await ctx.reply(
       action === "accept"
-        ? "Thank you! 🎉 We've recorded your acceptance. Our team will proceed with your order."
-        : "No problem! Your quote has been declined. Thank you for considering Valerie Collection. ❤️"
+        ? text.accepted
+        : text.declined,
+      {
+        reply_markup: getMainMenu(language),
+      }
     );
   } catch (error) {
     console.error("Quote decision processing failed:", error);
@@ -887,13 +1376,13 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
         throw new Error("Customer Telegram ID is invalid.");
       }
 
-      const promptText =
-        `I've received ${pendingCount} product${pendingCount === 1 ? "" : "s"}! 🛍️\n\n` +
-        "You can send more product links or screenshots, or tap **Done, submit** when you've sent everything.\n\n" +
-        "We'll submit the products together, and you can receive a separate price for each one.";
+      const language = customer.language || "en";
+      const text = getMessages(language);
+
+      const promptText = text.batchPrompt(pendingCount);
 
       const keyboard = new InlineKeyboard().text(
-        "✅ Done, submit",
+        text.doneSubmit,
         `submit_batch:${batchId}`
       );
 
@@ -989,6 +1478,9 @@ bot.on(["message:text", "message:photo"], async (ctx, next) => {
           throw new Error("Expected one item for the options request.");
         }
 
+        const language = customer.language || "en";
+        const text = getMessages(language);
+
         const item = pendingOrder.items[0];
         const requestedOptions = item.requestedOptions ?? [];
         const answers = {};
@@ -1010,7 +1502,7 @@ bot.on(["message:text", "message:photo"], async (ctx, next) => {
 
         if (missingOptions.length > 0) {
           await ctx.reply(
-            `I still need these details for that product: ${missingOptions.join(", ")}.\n\nPlease reply again using the requested labels.`
+            text.missingOptions(missingOptions)
           );
           return;
         }
@@ -1030,9 +1522,7 @@ bot.on(["message:text", "message:photo"], async (ctx, next) => {
             const quantity = Number(value);
 
             if (!Number.isInteger(quantity) || quantity < 1) {
-              await ctx.reply(
-                "Quantity must be a whole number greater than zero. Please reply again."
-              );
+              await ctx.reply(text.invalidQuantity);
               return;
             }
 
@@ -1058,72 +1548,83 @@ bot.on(["message:text", "message:photo"], async (ctx, next) => {
         ]);
 
         await ctx.reply(
-          "Thank you! ❤️ I've saved those options for your product. Our team can now prepare your price."
+          text.optionsSaved,
+          {
+            reply_markup: getMainMenu(language),
+          }
         );
         return;
       }
     }
 
-// Reuse the customer's active batch or create a new one.
-const batch = await getOrCreateCollectingBatch(customer.id);
+    // Reuse the customer's active batch or create a new one.
+    const batch = await getOrCreateCollectingBatch(customer.id);
 
-const messageText =
-  ctx.message.text ?? ctx.message.caption ?? "";
+    const messageText =
+      ctx.message.text ?? ctx.message.caption ?? "";
 
-// Extract a SHEIN URL, if the customer included one.
-const urlMatch = messageText.match(/https?:\/\/\S+/i);
+    // Extract a SHEIN URL, if the customer included one.
+    const urlMatch = messageText.match(/https?:\/\/\S+/i);
 
-const sheinUrl = urlMatch
-  ? urlMatch[0].replace(/[.,!?;:)]+$/, "")
-  : null;
+    const sheinUrl = urlMatch
+      ? urlMatch[0].replace(/[.,!?;:)]+$/, "")
+      : null;
 
-const isPhoto = Boolean(ctx.message.photo?.length);
+    const isPhoto = Boolean(ctx.message.photo?.length);
 
-const itemDescription =
-  messageText.trim() ||
-  (isPhoto
-    ? "Product screenshot submitted"
-    : "Product details submitted");
+    const itemDescription =
+      messageText.trim() ||
+      (isPhoto
+        ? "Product screenshot submitted"
+        : "Product details submitted");
 
-try {
-  await prisma.order.create({
-    data: {
-      customerId: customer.id,
-      batchId: batch.id,
-      status: "AWAITING_DETAILS",
-      sourceMessageId: ctx.message.message_id,
-      items: {
-        create: {
-          sheinUrl,
-          itemDescription,
-          quantity: 1,
+    try {
+      await prisma.order.create({
+        data: {
+          customerId: customer.id,
+          batchId: batch.id,
+          status: "AWAITING_DETAILS",
+          sourceMessageId: ctx.message.message_id,
+          items: {
+            create: {
+              sheinUrl,
+              itemDescription,
+              quantity: 1,
+            },
+          },
         },
-      },
-    },
-  });
-} catch (error) {
-  // Prevent duplicate processing of the same Telegram message.
-  if (error.code === "P2002") {
-    await ctx.reply(
-      "We've already received this product. 🛍️"
+      });
+    } catch (error) {
+      // Prevent duplicate processing of the same Telegram message.
+      if (error.code === "P2002") {
+        await ctx.reply(
+          getMessages(customer.language).receivedDuplicate
+        );
+        return;
+      }
+
+      throw error;
+    }
+
+    // A short pause groups album updates and rapid individual messages.
+    scheduleBatchPrompt(
+      customer,
+      batch.id,
+      Boolean(ctx.message.media_group_id)
     );
-    return;
+  } catch (error) {
+    console.error("Product submission failed:", error);
+
+    const customer = await prisma.customer.findUnique({
+      where: {
+        telegramId: BigInt(ctx.from.id),
+      },
+    }).catch(() => null);
+
+    const language = customer?.language || "en";
+
+    await ctx.reply(
+      getMessages(language).receivedError
+    );
   }
-
-  throw error;
-}
-
-// A short pause groups album updates and rapid individual messages.
-scheduleBatchPrompt(
-  customer,
-  batch.id,
-  Boolean(ctx.message.media_group_id)
-);
-} catch (error) {
-  console.error("Product submission failed:", error);
-
-  await ctx.reply(
-    "Something went wrong while receiving your product. Please try again later."
-  );
-}
 });
