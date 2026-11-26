@@ -1,0 +1,133 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum OrderStatus {
+  NEW_REQUEST
+  AWAITING_DETAILS
+  AWAITING_PRICE
+  PRICE_SENT
+  CUSTOMER_ACCEPTED
+  CUSTOMER_DECLINED
+  ORDERED_FROM_SUPPLIER
+  ARRIVED
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderIntakeStep {
+  PRODUCT_NAME
+  SIZE
+  COLOR
+  QUANTITY
+  CONFIRMATION
+  COMPLETED
+}
+
+enum PaymentStatus {
+  UNPAID
+  DEPOSIT_PAID
+  FULLY_PAID
+}
+
+enum OrderBatchStatus {
+  COLLECTING
+  SUBMITTING
+  FAILED
+  SUBMITTED
+}
+
+model Customer {
+  id          String  @id @default(uuid())
+  telegramId  BigInt  @unique
+  username    String?
+  displayName String
+  phoneNumber String?
+
+  // One permanent Telegram topic per customer
+  forumTopicId Int? @unique
+
+  batches   OrderBatch[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  orders Order[]
+}
+
+model Order {
+  id          String @id @default(uuid())
+  orderNumber Int    @unique @default(autoincrement())
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  status        OrderStatus      @default(NEW_REQUEST)
+  paymentStatus PaymentStatus    @default(UNPAID)
+  intakeStep    OrderIntakeStep?
+
+  totalSupplierCost  Float @default(0.0)
+  totalShippingCost  Float @default(0.0)
+  totalCustomerPrice Float @default(0.0)
+  netProfit          Float @default(0.0)
+
+  // Telegram message references
+  sourceMessageId Int?
+  adminMessageId  Int? @unique
+
+  batchId String?
+  batch   OrderBatch? @relation(fields: [batchId], references: [id])
+
+  optionsRequestMessageId Int? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@unique([customerId, sourceMessageId])
+  @@index([batchId])
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productName String?
+  size        String?
+  color       String?
+  quantity    Int     @default(1)
+
+  sheinUrl        String?
+  itemDescription String?
+
+  sheinBasePrice Float?
+  supplierPrice  Float?
+  customerPrice  Float?
+
+  allocatedShipping Float @default(0.0)
+
+  requestedOptions String[] @default([])
+  options          Json?
+
+  createdAt DateTime @default(now())
+}
+
+model OrderBatch {
+  id                    String           @id @default(uuid())
+  batchNumber           Int              @unique @default(autoincrement())
+  customerId            String
+  customer              Customer         @relation(fields: [customerId], references: [id])
+  status                OrderBatchStatus @default(COLLECTING)
+  promptMessageId       Int?
+  adminSummaryMessageId Int?             @unique
+  createdAt             DateTime         @default(now())
+  submittedAt           DateTime?
+  orders                Order[]
+
+  @@index([customerId, status])
+}
