@@ -735,6 +735,8 @@ bot.command("request", async (ctx) => {
       throw new Error("The original customer message ID is missing.");
     }
 
+    console.log("Preparing customer chat ID...");
+
     const customerChatId = Number(order.customer.telegramId);
 
     if (!Number.isSafeInteger(customerChatId)) {
@@ -1432,7 +1434,9 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
       }
 
       console.log("Sending Done, submit prompt...");
-      
+
+      console.log("About to send Done, submit prompt...");
+
       const promptMessage = await bot.api.sendMessage(
         customerChatId,
         promptText,
@@ -1441,6 +1445,8 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
           reply_markup: keyboard,
         }
       );
+
+      console.log("Prompt sent successfully:", promptMessage.message_id);
 
       await prisma.orderBatch.update({
         where: {
