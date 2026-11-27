@@ -45,7 +45,7 @@ const messages = {
     menu:
       "What would you like to do today? 🛍️",
     placeOrder:
-      "Great! ❤️ Let's get your order started.\n\nSend us your SHEIN product links or screenshots. You can send multiple products in one order.\n\nWhen you've sent everything, tap **Done, submit**.",
+      "Great! ❤️ Let's get your order started.\n\nSend us your SHEIN product links or screenshots. You can send multiple products in one order.\n\nWhen you've sent everything, tap *Done, submit*.",
     help:
       "Welcome to Valerie Collection! ❤️\n\n" +
       "Here's how to place an order:\n\n" +
@@ -106,7 +106,7 @@ const messages = {
       "Something went wrong while receiving your product. Please try again later.",
     batchPrompt:
       (count) =>
-        `I've received ${count} product${count === 1 ? "" : "s"}! 🛍️\n\nYou can send more product links or screenshots, or tap **Done, submit** when you've sent everything.\n\nWe'll submit the products together, and you can receive a separate price for each one.`,
+        `I've received ${count} product${count === 1 ? "" : "s"}! 🛍️\n\nYou can send more product links or screenshots, or tap *Done, submit* when you've sent everything.\n\nWe'll submit the products together, and you can receive a separate price for each one.`,
     doneSubmit:
       "✅ Done, submit",
     batchSubmitted:
@@ -1455,6 +1455,10 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
       console.error("Failed to send batch submission prompt:", error);
     }
   }, 1000);
+
+  console.log(
+  `Sending batch prompt for batch ${batchId}, pending products: ${pendingCount}`
+);
 
   batchPromptTimers.set(batchId, timer);
 }
