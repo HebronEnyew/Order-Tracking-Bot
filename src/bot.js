@@ -1364,6 +1364,7 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
   if (existingTimer) {
     clearTimeout(existingTimer);
   }
+  console.log(`Scheduling prompt for batch: ${batchId}`);
 
   // Telegram sends each photo in a media album as a separate update.
   // Debouncing gives the album updates time to arrive before showing
@@ -1378,6 +1379,7 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
         },
       });
 
+      console.log("Batch found:", batch?.id, "Status:", batch?.status);
       if (!batch || batch.status !== "COLLECTING") return;
 
       const pendingCount = await prisma.order.count({
@@ -1386,6 +1388,7 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
           status: "AWAITING_DETAILS",
         },
       });
+      console.log("Pending orders:", pendingCount);
 
       if (pendingCount === 0) return;
 
@@ -1428,6 +1431,8 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
         }
       }
 
+      console.log("Sending Done, submit prompt...");
+      
       const promptMessage = await bot.api.sendMessage(
         customerChatId,
         promptText,
