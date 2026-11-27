@@ -1413,6 +1413,8 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
       // Edit the existing prompt instead of sending a new prompt
       // every time another product arrives.
       if (batch.promptMessageId) {
+        console.log("Attempting to edit existing prompt...");
+
         try {
           await bot.api.editMessageText(
             customerChatId,
@@ -1423,12 +1425,10 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
               reply_markup: keyboard,
             }
           );
+
+          console.log("Existing prompt edited successfully.");
           return;
         } catch (error) {
-          if (error.description?.includes("message is not modified")) {
-            return;
-          }
-
           console.error("Could not edit existing batch prompt:", error);
         }
       }
