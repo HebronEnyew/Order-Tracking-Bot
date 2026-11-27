@@ -1456,9 +1456,6 @@ function scheduleBatchPrompt(customer, batchId, isAlbumPart = false) {
     }
   }, 1000);
 
-  console.log(
-  `Sending batch prompt for batch ${batchId}, pending products: ${pendingCount}`
-);
 
   batchPromptTimers.set(batchId, timer);
 }
